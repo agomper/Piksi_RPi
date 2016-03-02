@@ -4,7 +4,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>fifo.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -13,7 +12,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>fifo.c</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
@@ -43,10 +41,6 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
-      <item path="fifo.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="fifo.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
     </conf>
@@ -70,10 +64,6 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
-      <item path="fifo.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="fifo.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
     </conf>
