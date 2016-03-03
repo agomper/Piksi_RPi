@@ -52,7 +52,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-lbcm2835
+LDLIBSOPTIONS=-lbcm2835 -lwiringPi
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
