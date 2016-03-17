@@ -33,11 +33,11 @@ typedef unsigned short 		u16;
 typedef unsigned int 		u32;
 
 #define PREAMBLE 0x55
-#define MESG_1 0x01
-#define MESG_2 0x02
-#define ID_1 0x23
-#define ID_2 0x6a
-#define PayloadLength 34
+#define MESG_1 0x01                     //Message ID
+#define MESG_2 0x02                     //Message ID
+#define ID_1 0x23                       //Piksi ID
+#define ID_2 0x6a                       //Piksi ID
+#define PayloadLength 34                //Message payload (6+2 not included)
 #define pi 3.14159265358979323846
 
 unsigned char Payload[PayloadLength];
