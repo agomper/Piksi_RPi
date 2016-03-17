@@ -31,13 +31,14 @@ using namespace std;
 typedef unsigned char 		u8;
 typedef unsigned short 		u16;
 typedef unsigned int 		u32;
+typedef int                     s32;
 
 #define PREAMBLE 0x55
-#define MESG_1 0x01                     //Message ID
-#define MESG_2 0x02                     //Message ID
+#define MESG_1 0x03                     //Message ID 1
+#define MESG_2 0x02                     //Message ID 2
 #define ID_1 0x23                       //Piksi ID
 #define ID_2 0x6a                       //Piksi ID
-#define PayloadLength 34                //Message payload (6+2 not included)
+#define PayloadLength 22                //Message payload (6+2 not included)
 #define pi 3.14159265358979323846
 
 unsigned char Payload[PayloadLength];
@@ -94,7 +95,7 @@ double calculate_distance(double lat1, double lon1, double lat2, double lon2, ch
 }
 
 
-void show_queue() { 
+void show_queue_0201() { 
     static char dataMode = 'N';
     u8 n_sats, flags;
     u32 tow;
@@ -195,9 +196,110 @@ void show_queue() {
    else {
        iteratorUSBDelay++;
    }
+}
+
+
+void show_queue_0203() { //Baseline NED
+    static char dataMode = 'N';
+    u8 n_sats, flags;
+    u32 tow;
+    s32 north, east, down;
+    float distanceToBase, northMeters, eastMeters, downMeters;
+    static s32 northA, eastA, downA;
+    static float  distancePointAB = 0;
+    char arrayToSend[200], fixMode[5], fixModeString[15], stringDistance[30];;
+    char *statusFlag;
+    static int sendToUSBIterator, iteratorUSBDelay = 0;
+    static bool firstPoint = true;
+
+    memcpy(&tow, &Payload[0], 4*sizeof(unsigned char));
+    memcpy(&north, &Payload[4], 4*sizeof(unsigned char));
+    memcpy(&east, &Payload[8], 4*sizeof(unsigned char));
+    memcpy(&down, &Payload[12], 4*sizeof(unsigned char));
+    memcpy(&n_sats, &Payload[20], 1*sizeof(unsigned char));
+    memcpy(&flags, &Payload[21], 1*sizeof(unsigned char));
+    
+    northMeters = (float) north / 1000;
+    eastMeters = (float) east / 1000;
+    downMeters = (float) down / 1000;
+    
+    
+
+    //Fix mode values
+    statusFlag = byte_to_binary(flags);
+    memcpy(fixMode, &statusFlag[5], 3*sizeof(char));
+    //printf("%s\n", fixMode);
+    if (strcmp(fixMode, "000") == 0) {
+        strcpy(fixModeString, "SPP");
+    }
+    else if (strcmp(fixMode, "001") == 0) {
+        strcpy(fixModeString, "Fixed RTK");
+    }
+    else if (strcmp(fixMode, "010") == 0) {
+        strcpy(fixModeString, "Float RTK");
+    }
+    else {
+        strcpy(fixModeString, "???");
+    }
+    //printf("%s\n", fixModeString);
+      
+    //Calculate distance to the base
+   distanceToBase = sqrt(pow(north, 2) + pow(east, 2) + pow(down, 2)) / 1000;
    
-       
-       
+   sprintf(arrayToSend, "$%.3f,%.3f,%.3f,%d,%s,%.3f&", 
+        northMeters, eastMeters, downMeters, n_sats, fixModeString, distanceToBase);
+   
+   
+   printf("%s\n", arrayToSend);
+   if (iteratorUSBDelay == 50) {
+        if (sendToUSBIterator == 5) {
+            if (dataMode != 'D') {
+                serialPuts (USBfd, arrayToSend);
+                printf("Sending to USB...\n");
+            }
+        
+            if (serialDataAvail (USBfd)) {
+                dataMode = serialGetchar (USBfd);
+                serialFlush(USBfd);
+                printf("Mode received: %c\n", dataMode);
+                if (dataMode == 'S') {
+                    printf("Writing NED coordinates to file.\n");
+                    fp = fopen(fileName, "a");
+                    fprintf(fp, arrayToSend);
+                    fputc('\n', fp);
+                    fclose(fp);
+                }
+                else if (dataMode == 'D') {
+                    if (firstPoint == true) {
+                        firstPoint = false;
+                        northA = north;
+                        eastA = east;
+                        downA = down;
+                    }
+                    else {
+                        distancePointAB = sqrt(pow(north-northA, 2) + pow(east-eastA, 2) + pow(down-downA, 2)) / 1000;
+                        
+                        sprintf(stringDistance, "#%.3f&", distancePointAB);
+                        
+                        printf("Distance Point A - B: %s\n", stringDistance);
+                        serialPuts (USBfd, stringDistance);
+                           
+                    }
+                }
+                else if (dataMode == 'N') {
+                    firstPoint = true;
+                    distancePointAB = 0;
+                }
+            }
+            sendToUSBIterator = 0;
+        }
+        else {
+            sendToUSBIterator++;
+        }
+   }
+   else {
+       iteratorUSBDelay++;
+   }
 }
 
 
@@ -214,12 +316,15 @@ void process_byte (unsigned char inByte) {
    
    if (inByte == PREAMBLE) {
        PreambleFound = true;
+       //printf("Preambulo\n");
    }
-   else if (PreambleFound == true && inByte == MESG_1) {
+   else if (PreambleFound == true && inByte == MESG_1 && Message1Found == false) {
        Message1Found = true;
+       //printf("Message 1\n");
    }
    else if (Message1Found == true && inByte == MESG_2) {
        Message2Found = true;
+       //printf("Message 2\n");
    }
    else if (Message2Found == true && inByte == ID_1) {
        ID1Found = true;
@@ -235,7 +340,8 @@ void process_byte (unsigned char inByte) {
        ID1Found = false;
        ID2Found = false;
        PackageLength = inByte;
-       show_queue();
+       //show_queue_0201();
+       show_queue_0203();
    }
    else {
        PreambleFound = false;
